@@ -528,7 +528,10 @@ const SIZES = [0.9, 1, 1.15];  /* Petit · Moyen · Grand */
 const fresh = () => ({screen:"home", col:0, rolls:[null,null,null], text:"", mode:null, resume:null,
   scale:(state&&state.scale)||1, style:(state&&state.style)||"couleurs", nouveau:state?state.nouveau:0});
 let state = null;
-try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && Array.isArray(s.rolls)) state = s; }catch(e){}
+/* Stand (« ?stand ») : rien n'est gardé sur l'iPad. Recharger ou revenir à l'accueil du stand = nouvelle histoire. */
+const STAND_SANS_MEMOIRE = (function(){ try{ return /[?&]stand(=|&|$)/.test(location.search) || sessionStorage.getItem("stand")==="1"; }catch(e){ return /[?&]stand(=|&|$)/.test(location.search); } })();
+if(STAND_SANS_MEMOIRE){ try{ localStorage.removeItem(KEY); }catch(e){} }
+else { try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && Array.isArray(s.rolls)) state = s; }catch(e){} }
 if(!state) state = fresh();
 if(!SIZES.includes(state.scale)) state.scale = 1;
 if(state.style!=="simple") state.style = "couleurs";
@@ -541,7 +544,7 @@ let ui = {regl:false, qr:false, sheet:false, rolling:false, stir:0, angle:0, las
 let confirmTimer = null;
 function resetStir(){ ui.stir=0; ui.angle=0; ui.auto=false; }
 
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+function save(){ if(STAND_SANS_MEMOIRE) return; try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 function applyScale(){ document.documentElement.style.setProperty("--scale", state.scale); }
 function applyStyle(){ document.body.classList.toggle("simple", state.style==="simple"); }
 const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -682,7 +685,7 @@ const SCREENS = {
            <button class="btn primary" data-action="continue">Reprendre mon histoire</button>`
         : `<button class="btn primary" data-action="start">Commencer</button>`}
     </footer>
-    <div class="legal">Version 1.2<br>Idée du jeu inspirée de unjourunjeu.fr. Histoires de Noël : Ludo (@rprof_1). Des erreurs peuvent survenir.<br>
+    <div class="legal">Version 1.3<br>Idée du jeu inspirée de unjourunjeu.fr. Histoires de Noël : Ludo (@rprof_1). Des erreurs peuvent survenir.<br>
     Application développée par Claude AI sous la supervision de Ludo<b style="font-weight:700;font-size:1.35em;line-height:0">.</b> (@rprof_1) · <a href="https://rprof1.com" target="_blank" rel="noopener" style="color:inherit">rprof1.com</a>.<br>
     Licence <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr" target="_blank" rel="noopener" style="color:inherit">CC BY-NC-SA 4.0</a></div>`+regl+fenetreQR();
   },
